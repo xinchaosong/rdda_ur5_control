@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>rdda_ur5_control</name>
+  <version>0.1.0</version>
+  <description>The rdda_ur5 control package</description>
+  <maintainer email="song.xin@husky.neu.edu">Xinchao Song</maintainer>
+  <license>BSD</license>
+
+  <url type="website">https://github.com/xinchaosong/rdda_ur5_control</url>
+  <author>Xinchao Song</author>
+  <author>Zikun Yu</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>trajectory_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <build_export_depend>sensor_msgs</build_export_depend>
+  <build_export_depend>trajectory_msgs</build_export_depend>
+
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>trajectory_msgs</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
+
+  <export>
+  </export>
+</package>
