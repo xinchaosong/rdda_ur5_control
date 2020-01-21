@@ -1,0 +1,7 @@
+rdda_ur5_control:
+  velocity_default:
+    high: 0.1
+    low: 0.02
+  stiff_default:
+    f0: 0.1
+    f1: 0.1

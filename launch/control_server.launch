@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+
+  <arg name="output"		default="screen" doc="Display output to screen or log file."/>
+  <arg name="config_file"	default="$(find rdda_ur5_control)/config/rdda_ur5_control_params.yaml"
+       doc="YAML file that specifies ros parameters for robot initialization."/>
+
+  <rosparam command="load"	file="$(arg config_file)"/>
+
+  <node pkg="rdda_ur5_control" type="control_server.py" name="control_server" output="$(arg output)"/>
+
+</launch>
