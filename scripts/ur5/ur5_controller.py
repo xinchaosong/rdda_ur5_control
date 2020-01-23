@@ -82,7 +82,7 @@ class Ur5Controller(object):
 
         return x, y, z
 
-    def set_cartesian_position(self, cartesian_goal, velocity):
+    def set_cartesian_position(self, cartesian_goal, velocity, wait=True):
         pose_goal = geometry_msgs.msg.Pose()
         pose_goal.orientation.w = 0
         pose_goal.position.x = cartesian_goal[0]
@@ -91,7 +91,7 @@ class Ur5Controller(object):
 
         self.group.set_max_velocity_scaling_factor(velocity)
         self.group.set_pose_target(pose_goal)
-        self.group.go(wait=True)
+        self.group.go(wait=wait)
         self.group.stop()
         self.group.clear_pose_targets()
 
@@ -112,8 +112,11 @@ class Ur5Controller(object):
 
         return plan, fraction
 
-    def execute_plan(self, plan):
-        self.group.execute(plan, wait=True)
+    def execute_plan(self, plan, wait=True):
+        self.group.execute(plan, wait=wait)
+
+    def stop(self):
+        self.group.stop()
 
 
 if __name__ == '__main__':

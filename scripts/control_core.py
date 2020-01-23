@@ -267,6 +267,60 @@ class RddaUr5ControlCore(object):
         except rospy.ROSInterruptException:
             return 1
 
+    def move_ur5_trajectory(self, step_size, step_num, velocity, wait):
+        """
+        Moves the UR5/UR5e along with a line.
+
+        :param step_size: the size of each step
+        :param step_num: the total number of the steps to move
+        :param velocity: moving velocity
+        :param wait: True if wait for the motion to finish, False otherwise
+        :return: return code (0 or 1)
+        """
+
+        way_poses = []
+        robot_pose = self.ur5_controller.get_robot_pose()
+
+        try:
+            if wait:
+                print "UR5/UR5e is moving."
+
+            for i in xrange(step_num):
+                robot_pose.position.y += step_size
+                way_poses.append(copy.deepcopy(robot_pose))
+
+            plan, fraction = self.ur5_controller.plan_cartesian_path(way_points=way_poses, step=abs(step_size),
+                                                                     velocity=velocity)
+            self.ur5_controller.execute_plan(plan=plan, wait=wait)
+
+            final_position = way_poses[-1].position
+
+            if wait:
+                print "UR5/UR5e moved to (%s, %s, %s)." % (final_position.x, final_position.y, final_position.z)
+            else:
+                print "UR5/UR5e is moving to (%s, %s, %s)." % (final_position.x, final_position.y, final_position.z)
+
+            return 0
+
+        except rospy.ROSInterruptException:
+            return 1
+
+    def stop_ur5(self):
+        """
+        Stops the UR5/UR5e.
+
+        :return: return code (0 or 1)
+        """
+
+        try:
+            self.ur5_controller.stop()
+            print "UR5/UR5e has been stopped."
+
+            return 0
+
+        except rospy.ROSInterruptException:
+            return 1
+
     def home_ur5(self, velocity):
         """
         Homes the UR5/UR5e.
@@ -339,7 +393,7 @@ class RddaUr5ControlCore(object):
                                                                      velocity=velocity)
 
             read_multiprocessing.start()
-            self.ur5_controller.execute_plan(plan)
+            self.ur5_controller.execute_plan(plan=plan, wait=True)
             switch.value = 0
             read_multiprocessing.join()
 

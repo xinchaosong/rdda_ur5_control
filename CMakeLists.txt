@@ -59,6 +59,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   Move.srv
+  MoveTraj.srv
   MoveRead.srv
   NoParam.srv
   RddaData.srv
