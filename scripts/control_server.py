@@ -2,8 +2,10 @@
 import ast
 import socket
 
-from rdda_ur5_control.srv import Move, MoveResponse, NoParam, NoParamResponse, MoveRead, MoveReadResponse, \
-    SetRddaParam, SetRddaParamResponse, RddaData, RddaDataResponse, MoveTraj, MoveTrajResponse
+from rdda_ur5_control.srv import NoParam, NoParamResponse, \
+    Move, MoveResponse, MoveRead, MoveReadResponse, MoveTraj, MoveTrajResponse, MoveLinear, MoveLinearResponse, \
+    SetRddaParam, SetRddaParamResponse, RddaData, RddaDataResponse
+
 import rospy
 from control_core import RddaUr5ControlCore
 
@@ -42,6 +44,7 @@ class RddaUr5ControlServer(object):
             # UR5 services
             rospy.Service('rdda_ur5_control/move_ur5', Move, self.__move_ur5)
             rospy.Service('rdda_ur5_control/move_ur5_trajectory', MoveTraj, self.__move_ur5_trajectory)
+            rospy.Service('rdda_ur5_control/move_ur5_linear', MoveLinear, self.__move_ur5_linear)
             rospy.Service('rdda_ur5_control/stop_ur5', NoParam, self.__stop_ur5)
             rospy.Service('rdda_ur5_control/home_ur5', NoParam, self.__home_ur5)
 
@@ -106,10 +109,17 @@ class RddaUr5ControlServer(object):
 
             elif command[0] == 'move_ur5':
                 result = self.control_core.move_ur5(float(command[1]), float(command[2]), float(command[3]),
-                                                    float(command[4]))
+                                                    float(command[4]), float(command[5]), float(command[6]),
+                                                    float(command[7]))
+
             elif command[0] == 'move_ur5_trajectory':
                 result = self.control_core.move_ur5_trajectory(float(command[1]), int(command[2]), float(command[3]),
                                                                int(command[4]))
+
+            elif command[0] == 'move_ur5_linear':
+                low_velocity = rospy.get_param("/rdda_ur5_control/velocity_default/low")
+                result = self.control_core.move_ur5_linear(float(command[1]), low_velocity)
+
             elif command[0] == 'stop_ur5':
                 result = self.control_core.stop_ur5()
 
@@ -252,7 +262,7 @@ class RddaUr5ControlServer(object):
         :return: MoveRespons: int8 return_code (0 or 1)
         """
 
-        return_code = self.control_core.move_ur5(req.x, req.y, req.z, req.velocity)
+        return_code = self.control_core.move_ur5(req.x, req.y, req.z, req.roll, req.pitch, req.yaw, req.velocity)
 
         return MoveResponse(return_code)
 
@@ -266,6 +276,19 @@ class RddaUr5ControlServer(object):
         return_code = self.control_core.move_ur5_trajectory(req.step_size, req.step_num, req.velocity, req.wait)
 
         return MoveTrajResponse(return_code)
+
+    def __move_ur5_linear(self, req):
+        """
+        Moves the UR5/UR5e along with a line.
+
+        :param req: MoveLinear: float64 y_target
+        :return: MoveLinearResponse: int8 return_code (0 or 1)
+        """
+
+        low_velocity = rospy.get_param("/rdda_ur5_control/velocity_default/low")
+        return_code = self.control_core.move_ur5_linear(req.y_target, low_velocity)
+
+        return MoveLinearResponse(return_code)
 
     def __stop_ur5(self, req):
         """

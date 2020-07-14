@@ -84,10 +84,10 @@ class RddaUr5ControlCore(object):
         """
 
         try:
-            command_str = 'set_rdda_stiffness,%s,%s' % (stiff0, stiff1)
+            command_str = 'set_rdda_stiffness,%f,%f' % (stiff0, stiff1)
             self.__send_rdda_command(command_str.encode(), 16)
 
-            print "RDDA stiffness has been set to %s %s." % (stiff0, stiff1)
+            print "RDDA stiffness has been set to %f %f." % (stiff0, stiff1)
 
             return 0
 
@@ -104,10 +104,10 @@ class RddaUr5ControlCore(object):
         """
 
         try:
-            command_str = 'set_rdda_positions,%s,%s' % (position0, position1)
+            command_str = 'set_rdda_positions,%f,%f' % (position0, position1)
             self.__send_rdda_command(command_str.encode(), 16)
 
-            print "RDDA positions have been set to %s %s." % (position0, position1)
+            print "RDDA positions have been set to %f %f." % (position0, position1)
 
             return 0
 
@@ -124,10 +124,10 @@ class RddaUr5ControlCore(object):
         """
 
         try:
-            command_str = 'set_rdda_max_velocities,%s,%s' % (max_velocity0, max_velocity1)
+            command_str = 'set_rdda_max_velocities,%f,%f' % (max_velocity0, max_velocity1)
             self.__send_rdda_command(command_str.encode(), 16)
 
-            print "RDDA max velocities have been set to %s %s." % (max_velocity0, max_velocity1)
+            print "RDDA max velocities have been set to %f %f." % (max_velocity0, max_velocity1)
 
             return 0
 
@@ -144,10 +144,10 @@ class RddaUr5ControlCore(object):
         """
 
         try:
-            command_str = 'set_rdda_max_efforts,%s,%s' % (max_effort0, max_effort1)
+            command_str = 'set_rdda_max_efforts,%f,%f' % (max_effort0, max_effort1)
             self.__send_rdda_command(command_str.encode(), 16)
 
-            print "RDDA max efforts have been set to %s %s." % (max_effort0, max_effort1)
+            print "RDDA max efforts have been set to %f %f." % (max_effort0, max_effort1)
 
             return 0
 
@@ -245,22 +245,28 @@ class RddaUr5ControlCore(object):
         except rospy.ROSInterruptException:
             return []
 
-    def move_ur5(self, x, y, z, velocity):
+    def move_ur5(self, x, y, z, roll, pitch, yaw, velocity):
         """
         Moves the UR5/UR5e.
 
-        :param x: target x
-        :param y: target y
-        :param z: target z
-        :param velocity: moving velocity
+        :param x:        target x
+        :param y:        target y
+        :param z:        target z
+        :param roll:     target roll
+        :param pitch:    target pitch
+        :param yaw:      target yaw
+        :param velocity: the moving velocity
         :return: return code (0 or 1)
         """
 
         cartesian_goal = (x, y, z)
+        orientation_goal = (roll, pitch, yaw)
 
         try:
-            self.ur5_controller.set_cartesian_position(cartesian_goal, velocity)
-            print "UR5/UR5e has been moved to (%s, %s, %s) with the velocity of %s." % (x, y, z, velocity)
+            self.ur5_controller.set_robot_pose(cartesian_goal=cartesian_goal, orientation_goal=orientation_goal,
+                                               velocity=velocity)
+            print "UR5/UR5e has been moved to (%f, %f, %f, %f, %f, %f) with the velocity of %f." \
+                  % (x, y, z, roll, pitch, yaw, velocity)
 
             return 0
 
@@ -291,14 +297,60 @@ class RddaUr5ControlCore(object):
 
             plan, fraction = self.ur5_controller.plan_cartesian_path(way_points=way_poses, step=abs(step_size),
                                                                      velocity=velocity)
+
             self.ur5_controller.execute_plan(plan=plan, wait=wait)
 
             final_position = way_poses[-1].position
 
             if wait:
-                print "UR5/UR5e moved to (%s, %s, %s)." % (final_position.x, final_position.y, final_position.z)
+                print "UR5/UR5e moved to (%f, %f, %f)." % (final_position.x, final_position.y, final_position.z)
             else:
-                print "UR5/UR5e is moving to (%s, %s, %s)." % (final_position.x, final_position.y, final_position.z)
+                print "UR5/UR5e is moving to (%f, %f, %f)." % (final_position.x, final_position.y, final_position.z)
+
+            return 0
+
+        except rospy.ROSInterruptException:
+            return 1
+
+    def move_ur5_linear(self, y_target, velocity):
+        """
+        Moves the UR5/UR5e along with a line.
+
+        :param y_target: the target y to move to
+        :param velocity: moving velocity
+        :return: return code (0 or 1)
+        """
+
+        way_poses = []
+        robot_pose = self.ur5_controller.get_robot_pose()
+        y_start = robot_pose.position.y
+        way_poses.append(copy.deepcopy(robot_pose))
+
+        if y_target < y_start:
+            step_size = -0.005
+        elif y_target > y_start:
+            step_size = 0.005
+        else:
+            return
+
+        try:
+            print "UR5/UR5e is moving."
+
+            for i in xrange(int((y_target - y_start) / step_size) - 1):
+                robot_pose.position.y += step_size
+                way_poses.append(copy.deepcopy(robot_pose))
+
+            robot_pose.position.y = y_target
+            way_poses.append(copy.deepcopy(robot_pose))
+
+            plan, fraction = self.ur5_controller.plan_cartesian_path(way_points=way_poses, step=abs(step_size),
+                                                                     velocity=velocity)
+
+            self.ur5_controller.execute_plan(plan=plan, wait=True)
+
+            final_x, final_y, final_z = self.ur5_controller.get_cartesian_position()
+
+            print "UR5/UR5e moved to (%f, %f, %f)." % (final_x, final_y, final_z)
 
             return 0
 
@@ -357,7 +409,7 @@ class RddaUr5ControlCore(object):
                 angle = self.read_rdda_positions()
                 angle_data.append(float(angle))
 
-                print "UR5/UR5e moved to (%s, %s, %s)." % (x, y, z)
+                print "UR5/UR5e moved to (%f, %f, %f)." % (x, y, z)
 
             print angle_data
 
@@ -392,6 +444,8 @@ class RddaUr5ControlCore(object):
             plan, fraction = self.ur5_controller.plan_cartesian_path(way_points=way_poses, step=abs(step_size),
                                                                      velocity=velocity)
 
+            print plan
+
             read_multiprocessing.start()
             self.ur5_controller.execute_plan(plan=plan, wait=True)
             switch.value = 0
@@ -399,8 +453,8 @@ class RddaUr5ControlCore(object):
 
             final_position = way_poses[-1].position
 
-            print "UR5/UR5e moved to (%s, %s, %s)." % (final_position.x, final_position.y, final_position.z)
-            print "Collected the data of %s RDDA positions." % len(angle_series)
+            print "UR5/UR5e moved to (%f, %f, %f)." % (final_position.x, final_position.y, final_position.z)
+            print "Collected the data of %d RDDA positions." % len(angle_series)
 
             return angle_series
 

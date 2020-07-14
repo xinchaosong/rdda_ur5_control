@@ -61,6 +61,7 @@ add_service_files(
   Move.srv
   MoveTraj.srv
   MoveRead.srv
+  MoveLinear.srv
   NoParam.srv
   RddaData.srv
   SetRddaParam.srv

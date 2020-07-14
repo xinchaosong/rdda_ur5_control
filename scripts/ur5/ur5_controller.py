@@ -5,6 +5,7 @@ import math
 
 import rospy
 import geometry_msgs.msg
+from tf.transformations import quaternion_from_euler, euler_from_quaternion
 import moveit_commander
 from moveit_commander.conversions import pose_to_list
 
@@ -56,6 +57,33 @@ class Ur5Controller(object):
     def get_robot_pose(self):
         return self.group.get_current_pose().pose
 
+    def set_robot_pose(self, cartesian_goal, orientation_goal, velocity, wait=True):
+        pose_goal = geometry_msgs.msg.Pose()
+        quat = quaternion_from_euler(orientation_goal[0], orientation_goal[1], orientation_goal[2])
+
+        pose_goal.position.x = cartesian_goal[0]
+        pose_goal.position.y = cartesian_goal[1]
+        pose_goal.position.z = cartesian_goal[2]
+        pose_goal.orientation.x = quat[0]
+        pose_goal.orientation.y = quat[1]
+        pose_goal.orientation.z = quat[2]
+        pose_goal.orientation.w = quat[3]
+
+        self.group.set_max_velocity_scaling_factor(velocity)
+        self.group.set_pose_target(pose_goal)
+        self.group.go(wait=wait)
+        self.group.stop()
+        self.group.clear_pose_targets()
+
+        current_pose = self.group.get_current_pose().pose
+
+        print self.get_joint_state()
+
+        return all_close(pose_goal, current_pose, 0.01)
+
+    def get_pose(self):
+        return geometry_msgs.msg.Pose()
+
     def get_joint_state(self):
         return self.group.get_current_joint_values()
 
@@ -83,21 +111,20 @@ class Ur5Controller(object):
         return x, y, z
 
     def set_cartesian_position(self, cartesian_goal, velocity, wait=True):
-        pose_goal = geometry_msgs.msg.Pose()
-        pose_goal.orientation.w = 0
-        pose_goal.position.x = cartesian_goal[0]
-        pose_goal.position.y = cartesian_goal[1]
-        pose_goal.position.z = cartesian_goal[2]
-
-        self.group.set_max_velocity_scaling_factor(velocity)
-        self.group.set_pose_target(pose_goal)
-        self.group.go(wait=wait)
-        self.group.stop()
-        self.group.clear_pose_targets()
-
         current_pose = self.group.get_current_pose().pose
 
-        return all_close(pose_goal, current_pose, 0.01)
+        return self.set_robot_pose(cartesian_goal, current_pose.orientation, velocity, wait)
+
+    def get_orientation(self):
+        current_pose = self.group.get_current_pose().pose
+        euler = euler_from_quaternion(current_pose.orientation)
+
+        return euler
+
+    def set_orientation(self, orientation, velocity, wait=True):
+        current_pose = self.group.get_current_pose().pose
+
+        return self.set_robot_pose(current_pose.position, orientation, velocity, wait)
 
     def plan_cartesian_path(self, way_points, step, velocity):
         current_robot_state = self.robot.get_current_state()
