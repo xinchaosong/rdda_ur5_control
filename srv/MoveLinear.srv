@@ -1,3 +1,5 @@
-float64 y_target
+int64 axis
+float64 target
+float64 velocity
 ---
 int8 return_code

@@ -117,11 +117,16 @@ class RddaUr5ControlServer(object):
                                                                int(command[4]))
 
             elif command[0] == 'move_ur5_linear':
-                low_velocity = rospy.get_param("/rdda_ur5_control/velocity_default/low")
-                result = self.control_core.move_ur5_linear(float(command[1]), low_velocity)
+                result = self.control_core.move_ur5_linear(int(command[1]), float(command[2]), float(command[3]))
 
             elif command[0] == 'stop_ur5':
                 result = self.control_core.stop_ur5()
+
+            elif command[0] == 'set_ur5_joints':
+                low_velocity = rospy.get_param("/rdda_ur5_control/velocity_default/low")
+                result = self.control_core.set_ur5_joints(float(command[1]), float(command[2]), float(command[3]),
+                                                          float(command[4]), float(command[5]), float(command[6]),
+                                                          low_velocity)
 
             elif command[0] == 'home_ur5':
                 high_velocity = rospy.get_param("/rdda_ur5_control/velocity_default/high")
@@ -281,12 +286,11 @@ class RddaUr5ControlServer(object):
         """
         Moves the UR5/UR5e along with a line.
 
-        :param req: MoveLinear: float64 y_target
+        :param req: MoveLinear: float64 target
         :return: MoveLinearResponse: int8 return_code (0 or 1)
         """
 
-        low_velocity = rospy.get_param("/rdda_ur5_control/velocity_default/low")
-        return_code = self.control_core.move_ur5_linear(req.y_target, low_velocity)
+        return_code = self.control_core.move_ur5_linear(req.axis, req.target, req.velocity)
 
         return MoveLinearResponse(return_code)
 

@@ -117,7 +117,9 @@ class Ur5Controller(object):
 
     def get_orientation(self):
         current_pose = self.group.get_current_pose().pose
-        euler = euler_from_quaternion(current_pose.orientation)
+        quat = current_pose.orientation
+
+        euler = euler_from_quaternion((quat.x, quat.y, quat.z, quat.w))
 
         return euler
 

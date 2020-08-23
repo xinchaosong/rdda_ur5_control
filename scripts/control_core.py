@@ -245,6 +245,21 @@ class RddaUr5ControlCore(object):
         except rospy.ROSInterruptException:
             return []
 
+    def set_ur5_joints(self, j1, j2, j3, j4, j5, j6, velocity):
+        try:
+            self.ur5_controller.set_joint_state((j1, j2, j3, j4, j5, j6), velocity)
+
+            final_x, final_y, final_z = self.ur5_controller.get_cartesian_position()
+            final_roll, final_pitch, final_yaw = self.ur5_controller.get_orientation()
+
+            print "UR5/UR5e has been moved to (%f, %f, %f, %f, %f, %f) with the velocity of %f." \
+                  % (final_x, final_y, final_z, final_roll, final_pitch, final_yaw, velocity)
+
+            return 0
+
+        except rospy.ROSInterruptException:
+            return 1
+
     def move_ur5(self, x, y, z, roll, pitch, yaw, velocity):
         """
         Moves the UR5/UR5e.
@@ -265,8 +280,13 @@ class RddaUr5ControlCore(object):
         try:
             self.ur5_controller.set_robot_pose(cartesian_goal=cartesian_goal, orientation_goal=orientation_goal,
                                                velocity=velocity)
+
+            final_x, final_y, final_z = self.ur5_controller.get_cartesian_position()
+            final_roll, final_pitch, final_yaw = self.ur5_controller.get_orientation()
+
             print "UR5/UR5e has been moved to (%f, %f, %f, %f, %f, %f) with the velocity of %f." \
-                  % (x, y, z, roll, pitch, yaw, velocity)
+                  % (final_x, final_y, final_z, final_roll, final_pitch, final_yaw, velocity)
+            print self.ur5_controller.get_joint_state()
 
             return 0
 
@@ -312,35 +332,59 @@ class RddaUr5ControlCore(object):
         except rospy.ROSInterruptException:
             return 1
 
-    def move_ur5_linear(self, y_target, velocity):
+    def move_ur5_linear(self, axis, target, velocity):
         """
         Moves the UR5/UR5e along with a line.
 
-        :param y_target: the target y to move to
+        :param axis: the axis to move along
+        :param target: the target to move to
         :param velocity: moving velocity
         :return: return code (0 or 1)
         """
 
         way_poses = []
         robot_pose = self.ur5_controller.get_robot_pose()
-        y_start = robot_pose.position.y
+
+        if axis == 0:
+            start = robot_pose.position.x
+        elif axis == 1:
+            start = robot_pose.position.y
+        elif axis == 2:
+            start = robot_pose.position.z
+        else:
+            return
+
         way_poses.append(copy.deepcopy(robot_pose))
 
-        if y_target < y_start:
+        if target < start:
             step_size = -0.005
-        elif y_target > y_start:
+        elif target > start:
             step_size = 0.005
         else:
             return
 
         try:
-            print "UR5/UR5e is moving."
+            print "UR5/UR5e is moving with a velocity of %f." % velocity
 
-            for i in xrange(int((y_target - y_start) / step_size) - 1):
-                robot_pose.position.y += step_size
+            for i in xrange(int((target - start) / step_size) - 1):
+                if axis == 0:
+                    velocity = 0.06
+                    robot_pose.position.x += step_size
+                elif axis == 1:
+                    velocity = 0.04
+                    robot_pose.position.y += step_size
+                elif axis == 2:
+                    robot_pose.position.z += step_size
+
                 way_poses.append(copy.deepcopy(robot_pose))
 
-            robot_pose.position.y = y_target
+            if axis == 0:
+                robot_pose.position.x = target
+            elif axis == 1:
+                robot_pose.position.y = target
+            elif axis == 2:
+                robot_pose.position.z = target
+
             way_poses.append(copy.deepcopy(robot_pose))
 
             plan, fraction = self.ur5_controller.plan_cartesian_path(way_points=way_poses, step=abs(step_size),
