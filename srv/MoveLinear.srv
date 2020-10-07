@@ -1,5 +1,6 @@
 int64 axis
 float64 target
 float64 velocity
+int64 wait
 ---
 int8 return_code

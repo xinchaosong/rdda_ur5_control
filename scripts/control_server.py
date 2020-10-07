@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import ast
 import socket
 
@@ -42,6 +43,7 @@ class RddaUr5ControlServer(object):
             rospy.Service('rdda_ur5_control/read_rdda_origins', RddaData, self.__read_rdda_origins)
 
             # UR5 services
+            rospy.Service('rdda_ur5_control/read_ur5_position', RddaData, self.__read_ur5_position)
             rospy.Service('rdda_ur5_control/move_ur5', Move, self.__move_ur5)
             rospy.Service('rdda_ur5_control/move_ur5_trajectory', MoveTraj, self.__move_ur5_trajectory)
             rospy.Service('rdda_ur5_control/move_ur5_linear', MoveLinear, self.__move_ur5_linear)
@@ -107,6 +109,9 @@ class RddaUr5ControlServer(object):
             elif command[0] == 'read_rdda_origins':
                 result = self.control_core.read_rdda_origins()
 
+            elif command[0] == 'read_ur5_position':
+                result = self.control_core.read_ur5_position()
+
             elif command[0] == 'move_ur5':
                 result = self.control_core.move_ur5(float(command[1]), float(command[2]), float(command[3]),
                                                     float(command[4]), float(command[5]), float(command[6]),
@@ -117,7 +122,8 @@ class RddaUr5ControlServer(object):
                                                                int(command[4]))
 
             elif command[0] == 'move_ur5_linear':
-                result = self.control_core.move_ur5_linear(int(command[1]), float(command[2]), float(command[3]))
+                result = self.control_core.move_ur5_linear(int(command[1]), float(command[2]), float(command[3]),
+                                                           float(command[4]))
 
             elif command[0] == 'stop_ur5':
                 result = self.control_core.stop_ur5()
@@ -259,6 +265,18 @@ class RddaUr5ControlServer(object):
 
         return RddaDataResponse(angle_origins)
 
+    def __read_ur5_position(self, req):
+        """
+        Reads the RDDA origins.
+
+        :param req: RddaData: N/A
+        :return: RddaDataResponse: float64[] angle_data
+        """
+
+        ur5_position = self.control_core.read_ur5_position()
+
+        return RddaDataResponse(ur5_position)
+
     def __move_ur5(self, req):
         """
         Moves the UR5/UR5e.
@@ -290,7 +308,7 @@ class RddaUr5ControlServer(object):
         :return: MoveLinearResponse: int8 return_code (0 or 1)
         """
 
-        return_code = self.control_core.move_ur5_linear(req.axis, req.target, req.velocity)
+        return_code = self.control_core.move_ur5_linear(req.axis, req.target, req.velocity, req.wait)
 
         return MoveLinearResponse(return_code)
 

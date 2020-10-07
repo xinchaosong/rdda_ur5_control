@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import ast
 import copy
 import subprocess
@@ -184,12 +185,12 @@ class RddaUr5ControlCore(object):
             data, addr = rdda_positions_receiver.recvfrom(64)
             angle = data.decode()
 
-            print "RDDA position is %s." % angle
+            print "RDDA positions are %s." % angle
 
             return angle
 
         except rospy.ROSInterruptException:
-            return -999.0
+            return []
 
     def read_rdda_lower_bounds(self):
         """
@@ -241,6 +242,17 @@ class RddaUr5ControlCore(object):
             print "RDDA origins are %s." % angle_origins
 
             return angle_origins
+
+        except rospy.ROSInterruptException:
+            return []
+
+    def read_ur5_position(self):
+        try:
+            x, y, z = self.ur5_controller.get_cartesian_position()
+
+            print "The current UR5 position is %f, %f, %f." % (x, y, z)
+
+            return [x, y, z]
 
         except rospy.ROSInterruptException:
             return []
@@ -332,69 +344,46 @@ class RddaUr5ControlCore(object):
         except rospy.ROSInterruptException:
             return 1
 
-    def move_ur5_linear(self, axis, target, velocity):
+    def move_ur5_linear(self, axis, target, velocity, wait):
         """
         Moves the UR5/UR5e along with a line.
 
         :param axis: the axis to move along
         :param target: the target to move to
         :param velocity: moving velocity
+        :param wait: if waits for the movement to finish for not before returns
         :return: return code (0 or 1)
         """
 
         way_poses = []
-        robot_pose = self.ur5_controller.get_robot_pose()
 
+        # Adds the current pose as the source pose.
+        robot_pose = self.ur5_controller.get_robot_pose()
+        way_poses.append(copy.deepcopy(robot_pose))
+
+        # Adds the target pose.
         if axis == 0:
-            start = robot_pose.position.x
+            robot_pose.position.x = target
         elif axis == 1:
-            start = robot_pose.position.y
+            robot_pose.position.y = target
         elif axis == 2:
-            start = robot_pose.position.z
-        else:
-            return
+            robot_pose.position.z = target
 
         way_poses.append(copy.deepcopy(robot_pose))
 
-        if target < start:
-            step_size = -0.005
-        elif target > start:
-            step_size = 0.005
-        else:
-            return
-
         try:
-            print "UR5/UR5e is moving with a velocity of %f." % velocity
+            if wait:
+                print "UR5/UR5e is moving with a velocity of %f." % velocity
 
-            for i in xrange(int((target - start) / step_size) - 1):
-                if axis == 0:
-                    velocity = 0.06
-                    robot_pose.position.x += step_size
-                elif axis == 1:
-                    velocity = 0.04
-                    robot_pose.position.y += step_size
-                elif axis == 2:
-                    robot_pose.position.z += step_size
-
-                way_poses.append(copy.deepcopy(robot_pose))
-
-            if axis == 0:
-                robot_pose.position.x = target
-            elif axis == 1:
-                robot_pose.position.y = target
-            elif axis == 2:
-                robot_pose.position.z = target
-
-            way_poses.append(copy.deepcopy(robot_pose))
-
-            plan, fraction = self.ur5_controller.plan_cartesian_path(way_points=way_poses, step=abs(step_size),
+            plan, fraction = self.ur5_controller.plan_cartesian_path(way_points=way_poses, step=0.005,
                                                                      velocity=velocity)
-
-            self.ur5_controller.execute_plan(plan=plan, wait=True)
-
+            self.ur5_controller.execute_plan(plan=plan, wait=wait)
             final_x, final_y, final_z = self.ur5_controller.get_cartesian_position()
 
-            print "UR5/UR5e moved to (%f, %f, %f)." % (final_x, final_y, final_z)
+            if wait:
+                print "UR5/UR5e moved to (%f, %f, %f)." % (final_x, final_y, final_z)
+            else:
+                print "UR5/UR5e is moving to (%f, %f, %f)." % (final_x, final_y, final_z)
 
             return 0
 
