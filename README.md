@@ -20,5 +20,5 @@ A controlling interface for the remote direct-drive actuator (RDDA) with Univers
 
 ## Acknowledgement
 
-This project uses the code from [MoveIt!]([https://moveit.ros.org/]) and the GitHub repository 
+This project uses the code from [MoveIt!](https://moveit.ros.org/) and the GitHub repository 
 [rdda_interface](https://github.com/RoboticsCollaborative/rdda_interface).
