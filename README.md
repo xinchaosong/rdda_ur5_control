@@ -1,6 +1,6 @@
 # rdda_ur5_control
 
-A controlling interface for the remote direct-drive actuator (RDDA) with Universal Robots UR5/UR5e.
+A controlling interface for the Remote Direct-Drive Actuator (RDDA) with Universal Robots UR5/UR5e.
 
 ## Installtion
 
