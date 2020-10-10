@@ -14,8 +14,9 @@ import rospy
 from ur5.ur5_controller import Ur5Controller
 from rdda.rdda_comm_bridge import rdda_proxy_control_in_port, rdda_proxy_control_out_port, rdda_repeater_out_port
 
-kinematics_config_file = '${HOME}/my_robot_calibration.yaml'
+robot_type = 'ur5e'
 robot_ip = '192.168.0.101'
+kinematics_config_file = '${HOME}/my_robot_calibration.yaml'
 
 
 def terminal_run(command):
@@ -30,7 +31,8 @@ def init_moveit():
 
     try:
         while "/robot_state_publisher" not in rosnode.get_node_names():
-            terminal_run('roslaunch ur_robot_driver ur5e_bringup.launch robot_ip:=' + robot_ip + kinematics_config)
+            terminal_run('roslaunch ur_robot_driver %s_bringup.launch robot_ip:=%s%s'
+                         % (robot_type, robot_ip, kinematics_config))
             time.sleep(4)
 
         while "/move_group" not in rosnode.get_node_names():
