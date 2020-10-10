@@ -18,6 +18,10 @@ A controlling interface for the Remote Direct-Drive Actuator (RDDA) with Univers
 
 `export ROS_IP=192.168.0.110 -> .bashrc`
 
+## Contribution
+
+NSF project: *Controllable Compliance: A New Robotic Arm for Contact-Rich Manipulation*
+
 ## Acknowledgement
 
 This project uses the code from [MoveIt!](https://moveit.ros.org/) and the GitHub repository 
