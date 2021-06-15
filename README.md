@@ -1,4 +1,4 @@
-# RDDA UR5 Control
+# ROS Controller of RDDA+UR5 
 
 A ROS package for controlling the Remote Direct-Drive Actuator (RDDA) with Universal Robots UR5/UR5e at Northeastern University, Boston.
 
