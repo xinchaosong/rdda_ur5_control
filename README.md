@@ -60,6 +60,8 @@ Example: [control_client_py3.py](./client/control_client_py3.py)
 
 NSF project: *Controllable Compliance: A New Robotic Arm for Contact-Rich Manipulation*
 
+CoRL 2020: *Belief-Grounded Networks for Accelerated Robot Learning under Partial* ([website](https://sites.google.com/view/bgn-pomdp))
+
 ## Acknowledgement
 
 This project uses the code from [MoveIt!](https://moveit.ros.org/) and the GitHub repository 
